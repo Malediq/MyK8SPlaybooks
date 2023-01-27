@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mwd2
+  labels:
+    app: myk8sd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      project: k8sdouble
+  template:
+    metadata:
+      labels:
+        project: k8sdouble
+    spec:
+      containers:
+        - name: matrix
+          image: malediq/k8s:latest
+          ports:
+            - containerPort: 80
+        
+        - name: tomcat
+          image: tomcat:8.5.38
+          ports:
+            - containerPort: 8080
+            
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service2-multi
+  labels:
+    env: prod
+    owner: malediq
+spec:
+  selector:
+    project: k8sdouble #Select PODS with those labels
+  ports:
+    - name: matrix-listener
+      protocol: TCP
+      port: 80         #Port on LoadBalancer
+      targetPort: 80   #Port on POD
+      
+    - name: tomcat-listener
+      protocol: TCP
+      port: 8888       #Port on LoadBalancer
+      targetPort: 8080 #Port on POD
+  type: LoadBalancer

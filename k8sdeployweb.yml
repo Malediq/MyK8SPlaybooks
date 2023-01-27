@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sber-laba
+
+---  
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: Pod1
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-limit-range
+  namespace: sber-laba
+spec:
+  limits:
+  - default:
+      memory: 512Mi
+    defaultRequest:
+      memory: 256Mi
+    type: Container
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pods1
+  namespace: Pod1
+spec:
+  hard:
+    pods: "1"
+
+---
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: my-web-deployment
+  namespace: sber-laba
+  labels:
+    app: my-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      project: my-web
+  template:
+    metadata:
+      labels:
+        project: my-web
+    spec:
+      containers:
+        
+        - name: matrix
+          image: malediq/k8s:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+        
+        - name: tomcat
+          image: tomcat:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "72Mi"
+              cpu: "300m"
+            limits:
+              memory: "144Mi"
+              cpu: "600m"
+              
+---
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: my-web-qos
+  namespace: Pod1
+  labels:
+    app: my-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      project: my-qos
+  template:
+    metadata:
+      labels:
+        project: my-qos
+    spec:
+      containers:   #Guaranteed
+        - name: matrix
+          image: malediq/k8s:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"   #BestEffort if no have req and lim
+              cpu: "250m"
+            limits:
+              memory: "64Mi"   #Burstable if !=64 or cpu!=250
+              cpu: "250m"
+        
